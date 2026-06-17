@@ -23,22 +23,23 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-            azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_WATER_00585B810 }}
-            repo_token: ${{ secrets.GITHUB_TOKEN }}
-            action: "upload"
+           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_WATER_00585B810 }}
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           action: "upload"
 
-            app_location: "/"
-            api_location: ""
-            output_location: "dist"
+           app_location: "/frontend"
+           api_location: ""
+           output_location: "dist"
 
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request Job
-    steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_WATER_00585B810 }}
-          action: "close"
+ close_pull_request_job:
+  if: github.event_name == 'pull_request' && github.event.action == 'closed'
+  runs-on: ubuntu-latest
+  name: Close Pull Request Job
+  steps:
+    - name: Close Pull Request
+      id: closepullrequest
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_WATER_00585B810 }}
+        action: "close"
+        app_location: "/frontend"
