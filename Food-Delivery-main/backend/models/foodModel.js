@@ -1,13 +1,16 @@
-import mongoose from "mongoose";
+import { DataTypes } from "sequelize";
+import sequelize from "../config/db.js";
 
-const foodSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  price: { type: Number, required: true },
-  image: { type: String, required: true },
-  category: { type: String, required: true },
-});
+const Food = sequelize.define(
+  "Food",
+  {
+    name: { type: DataTypes.STRING, allowNull: false },
+    description: { type: DataTypes.TEXT, allowNull: false },
+    price: { type: DataTypes.FLOAT, allowNull: false },
+    image: { type: DataTypes.STRING, allowNull: false },
+    category: { type: DataTypes.STRING, allowNull: false },
+  },
+  { timestamps: false }
+);
 
-const foodModel=mongoose.models.food || mongoose.model("food",foodSchema);
-
-export default foodModel;
+export default Food;

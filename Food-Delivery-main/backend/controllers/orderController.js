@@ -1,5 +1,5 @@
-import orderModel from "../models/orderModel.js";
-import userModel from "../models/userModel.js";
+import Order from "../models/orderModel.js";
+import User from "../models/userModel.js";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -8,14 +8,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const placeOrder = async (req, res) => {
   const frontend_url = "https://food-delivery-frontend-s2l9.onrender.com";
   try {
-    const newOrder = new orderModel({
+    const newOrder = await Order.create({
       userId: req.body.userId,
       items: req.body.items,
       amount: req.body.amount,
       address: req.body.address,
     });
-    await newOrder.save();
-    await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
+    await User.update({ cartData: {} }, { where: { id: req.body.userId } });
 
     const line_items = req.body.items.map((item) => ({
       price_data: {
@@ -42,8 +41,8 @@ const placeOrder = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       line_items: line_items,
       mode: "payment",
-      success_url: `${frontend_url}/verify?success=true&orderId=${newOrder._id}`,
-      cancel_url: `${frontend_url}/verify?success=false&orderId=${newOrder._id}`,
+      success_url: `${frontend_url}/verify?success=true&orderId=${newOrder.id}`,
+      cancel_url: `${frontend_url}/verify?success=false&orderId=${newOrder.id}`,
     });
 
     res.json({ success: true, session_url: session.url });
@@ -57,10 +56,10 @@ const verifyOrder = async (req, res) => {
   const { orderId, success } = req.body;
   try {
     if (success == "true") {
-      await orderModel.findByIdAndUpdate(orderId, { payment: true });
+      await Order.update({ payment: true }, { where: { id: orderId } });
       res.json({ success: true, message: "Paid" });
     } else {
-      await orderModel.findByIdAndDelete(orderId);
+      await Order.destroy({ where: { id: orderId } });
       res.json({ success: false, message: "Not Paid" });
     }
   } catch (error) {
@@ -72,7 +71,7 @@ const verifyOrder = async (req, res) => {
 // user orders for frontend
 const userOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({ userId: req.body.userId });
+    const orders = await Order.findAll({ where: { userId: req.body.userId } });
     res.json({ success: true, data: orders });
   } catch (error) {
     console.log(error);
@@ -83,9 +82,9 @@ const userOrders = async (req, res) => {
 // Listing orders for admin pannel
 const listOrders = async (req, res) => {
   try {
-    let userData = await userModel.findById(req.body.userId);
+    let userData = await User.findByPk(req.body.userId);
     if (userData && userData.role === "admin") {
-      const orders = await orderModel.find({});
+      const orders = await Order.findAll();
       res.json({ success: true, data: orders });
     } else {
       res.json({ success: false, message: "You are not admin" });
@@ -99,13 +98,14 @@ const listOrders = async (req, res) => {
 // api for updating status
 const updateStatus = async (req, res) => {
   try {
-    let userData = await userModel.findById(req.body.userId);
+    let userData = await User.findByPk(req.body.userId);
     if (userData && userData.role === "admin") {
-      await orderModel.findByIdAndUpdate(req.body.orderId, {
-        status: req.body.status,
-      });
+      await Order.update(
+        { status: req.body.status },
+        { where: { id: req.body.orderId } }
+      );
       res.json({ success: true, message: "Status Updated Successfully" });
-    }else{
+    } else {
       res.json({ success: false, message: "You are not an admin" });
     }
   } catch (error) {

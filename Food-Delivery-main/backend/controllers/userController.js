@@ -1,4 +1,4 @@
-import userModel from "../models/userModel.js";
+import User from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
@@ -8,17 +8,17 @@ import validator from "validator";
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await userModel.findOne({ email });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.json({ success: false, message: "User Doesn't exist" });
     }
-    const isMatch =await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.json({ success: false, message: "Invalid Credentials" });
     }
-    const role=user.role;
-    const token = createToken(user._id);
-    res.json({ success: true, token,role });
+    const role = user.role;
+    const token = createToken(user.id);
+    res.json({ success: true, token, role });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });
@@ -37,7 +37,7 @@ const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
   try {
     // checking user is already exist
-    const exists = await userModel.findOne({ email });
+    const exists = await User.findOne({ where: { email } });
     if (exists) {
       return res.json({ success: false, message: "User already exists" });
     }
@@ -58,16 +58,14 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(Number(process.env.SALT));
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new userModel({
-      name: name,
-      email: email,
+    const user = await User.create({
+      name,
+      email,
       password: hashedPassword,
     });
-
-    const user = await newUser.save();
-    const role=user.role;
-    const token = createToken(user._id);
-    res.json({ success: true, token, role});
+    const role = user.role;
+    const token = createToken(user.id);
+    res.json({ success: true, token, role });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });

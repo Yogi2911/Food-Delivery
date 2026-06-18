@@ -1,22 +1,21 @@
-import foodModel from "../models/foodModel.js";
-import userModel from "../models/userModel.js";
+import Food from "../models/foodModel.js";
+import User from "../models/userModel.js";
 import fs from "fs";
 
 // add food items
 
 const addFood = async (req, res) => {
   let image_filename = `${req.file.filename}`;
-  const food = new foodModel({
-    name: req.body.name,
-    description: req.body.description,
-    price: req.body.price,
-    category: req.body.category,
-    image: image_filename,
-  });
   try {
-    let userData = await userModel.findById(req.body.userId);
+    let userData = await User.findByPk(req.body.userId);
     if (userData && userData.role === "admin") {
-      await food.save();
+      await Food.create({
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        category: req.body.category,
+        image: image_filename,
+      });
       res.json({ success: true, message: "Food Added" });
     } else {
       res.json({ success: false, message: "You are not admin" });
@@ -30,7 +29,7 @@ const addFood = async (req, res) => {
 // all foods
 const listFood = async (req, res) => {
   try {
-    const foods = await foodModel.find({});
+    const foods = await Food.findAll();
     res.json({ success: true, data: foods });
   } catch (error) {
     console.log(error);
@@ -41,11 +40,13 @@ const listFood = async (req, res) => {
 // remove food item
 const removeFood = async (req, res) => {
   try {
-    let userData = await userModel.findById(req.body.userId);
+    let userData = await User.findByPk(req.body.userId);
     if (userData && userData.role === "admin") {
-      const food = await foodModel.findById(req.body.id);
-      fs.unlink(`uploads/${food.image}`, () => {});
-      await foodModel.findByIdAndDelete(req.body.id);
+      const food = await Food.findByPk(req.body.id);
+      if (food) {
+        fs.unlink(`uploads/${food.image}`, () => {});
+        await Food.destroy({ where: { id: req.body.id } });
+      }
       res.json({ success: true, message: "Food Removed" });
     } else {
       res.json({ success: false, message: "You are not admin" });
