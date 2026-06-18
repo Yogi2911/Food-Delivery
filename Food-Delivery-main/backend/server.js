@@ -28,6 +28,11 @@ app.use("/api/user", userRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 
+// Test route
+app.get("/api/users", (req, res) => {
+  res.json({ message: "Users route working" });
+});
+
 app.get("/", (req, res) => {
   res.send("API Working");
 });
